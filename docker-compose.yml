@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  # ==========================================
+  # PostgreSQL Database Service
+  # ==========================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: fleetcore_postgres
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-password123}
+      POSTGRES_DB: ${DB_NAME:-fleetcore_db}
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - fleetcore-network
+    restart: always
+
+  # ==========================================
+  # NestJS Backend API Service
+  # ==========================================
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fleetcore_api
+    # Load all variables from the local .env file
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=postgres
+      - DB_PORT=5432
+    ports:
+      - '${PORT:-3000}:3000'
+    depends_on:
+      - postgres
+    networks:
+      - fleetcore-network
+    restart: always
+
+# ==========================================
+# Volumes and Networks Configuration
+# ==========================================
+volumes:
+  postgres_data:
+
+networks:
+  fleetcore-network:
+    driver: bridge
