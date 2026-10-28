@@ -50,10 +50,16 @@ export class MaintenanceEntity {
   })
   status: MaintenanceStatus;
 
-  // Eager loading to automatically load the related vehicle when fetching a maintenance record
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  finalCost: number;
+
+  @Column({ type: 'int', nullable: true })
+  finalMileage: number;
+
+  @ManyToOne(() => VehicleEntity, { eager: true, onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'vehicleId' })
   vehicle: VehicleEntity;
-  @ManyToOne(() => VehicleEntity, { eager: true, onDelete: 'RESTRICT' })
+
   @Column()
   vehicleId: string;
 

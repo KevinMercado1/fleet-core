@@ -5,6 +5,7 @@ import {
   IsUUID,
   IsDateString,
   IsOptional,
+  IsNumber,
 } from 'class-validator';
 import { ApiProperty, PartialType } from '@nestjs/swagger';
 import {
@@ -21,6 +22,11 @@ export class CreateMaintenanceDto {
   @IsString()
   @IsNotEmpty()
   description: string;
+
+  @ApiProperty({ example: 15500 })
+  @IsNumber()
+  @IsNotEmpty()
+  mileage: number;
 
   @ApiProperty({ example: '2026-11-01T08:00:00Z' })
   @IsDateString()
@@ -52,4 +58,14 @@ export class UpdateMaintenanceDto extends PartialType(CreateMaintenanceDto) {
   @IsEnum(MaintenanceStatus)
   @IsOptional()
   status?: MaintenanceStatus;
+
+  @ApiProperty({ example: 250.5, required: false })
+  @IsNumber()
+  @IsOptional()
+  finalCost?: number;
+
+  @ApiProperty({ example: 16000, required: false })
+  @IsNumber()
+  @IsOptional()
+  finalMileage?: number;
 }

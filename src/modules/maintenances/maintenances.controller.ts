@@ -31,6 +31,7 @@ export class MaintenancesController {
   constructor(private readonly maintenancesService: MaintenancesService) {}
 
   @Get()
+  @Roles(UserRole.ADMIN, UserRole.TECHNICIAN)
   @ApiOperation({ summary: 'Get all maintenances' })
   @ApiResponse({ status: 200, description: 'Return all maintenances.' })
   async findAll() {
@@ -38,6 +39,7 @@ export class MaintenancesController {
   }
 
   @Get(':id')
+  @Roles(UserRole.ADMIN, UserRole.TECHNICIAN)
   @ApiOperation({ summary: 'Get a specific maintenance by ID' })
   @ApiResponse({ status: 200, description: 'Return maintenance details.' })
   async findOne(@Param('id') id: string) {
@@ -45,23 +47,31 @@ export class MaintenancesController {
   }
 
   @Post()
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
-  @ApiOperation({ summary: 'Schedule a new maintenance (Admin/Manager)' })
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Schedule a new maintenance (Admin only)' })
   @ApiResponse({
     status: 201,
     description: 'Maintenance successfully scheduled.',
   })
-  @ApiResponse({ status: 409, description: 'Mechanic schedule conflict.' })
+  @ApiResponse({
+    status: 409,
+    description:
+      'Mechanic schedule conflict or vehicle already in maintenance.',
+  })
   async create(@Body() createDto: CreateMaintenanceDto) {
     return this.maintenancesService.create(createDto);
   }
 
   @Patch(':id')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
-  @ApiOperation({ summary: 'Update maintenance status or details' })
+  @Roles(UserRole.ADMIN, UserRole.TECHNICIAN)
+  @ApiOperation({ summary: 'Update maintenance status or closure details' })
   @ApiResponse({
     status: 200,
     description: 'Maintenance successfully updated.',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid state transition or missing closure data.',
   })
   async update(
     @Param('id') id: string,

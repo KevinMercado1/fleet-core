@@ -1,7 +1,7 @@
 import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import * as argon2 from 'argon2';
+import * as bcrypt from 'bcrypt';
 import { UserEntity, UserRole } from '../users/entities/user.entity.js';
 import {
   VehicleEntity,
@@ -35,21 +35,21 @@ export class SeedService implements OnApplicationBootstrap {
   private async seedDatabase() {
     this.logger.log('Checking and seeding initial database data...');
 
-    // 1. Seed Users for each Role
+    // 1. Seed Users (1 ADMIN, 2 TECHNICIANS)
     const usersToSeed = [
       {
         email: 'admin@fleetcore.com',
-        password: 'Admin123*',
+        password: 'password123',
         role: UserRole.ADMIN,
       },
       {
-        email: 'manager@fleetcore.com',
-        password: 'Manager123*',
-        role: UserRole.MANAGER,
+        email: 'tech1@fleetcore.com',
+        password: 'password123',
+        role: UserRole.TECHNICIAN,
       },
       {
-        email: 'technician@fleetcore.com',
-        password: 'Tech123*',
+        email: 'tech2@fleetcore.com',
+        password: 'password123',
         role: UserRole.TECHNICIAN,
       },
     ];
@@ -59,7 +59,7 @@ export class SeedService implements OnApplicationBootstrap {
         where: { email: u.email },
       });
       if (!existing) {
-        const hashedPassword = await argon2.hash(u.password);
+        const hashedPassword = await bcrypt.hash(u.password, 10);
         await this.userRepository.save(
           this.userRepository.create({
             email: u.email,
@@ -67,60 +67,110 @@ export class SeedService implements OnApplicationBootstrap {
             role: u.role,
           }),
         );
-        this.logger.log(`Created user (${u.role}): ${u.email} / ${u.password}`);
+        this.logger.log(`Created user (${u.role}): ${u.email}`);
       }
     }
 
-    // 2. Seed Default Workshop
-    const workshopName = 'Central Main Workshop';
-    let workshop = await this.workshopRepository.findOne({
-      where: { name: workshopName },
-    });
-    if (!workshop) {
-      await this.workshopRepository.save(
-        this.workshopRepository.create({
-          name: workshopName,
-          address: '100 Industrial Avenue, Sector 4',
-          isActive: true,
-        }),
-      );
-      this.logger.log('Default workshop created.');
+    // 2. Seed Workshops (1 Active, 1 Inactive)
+    const workshopsToSeed = [
+      {
+        name: 'Central Main Workshop',
+        address: '100 Industrial Avenue',
+        isActive: true,
+      },
+      {
+        name: 'Old North Garage',
+        address: '404 Abandoned Road',
+        isActive: false,
+      },
+    ];
+
+    for (const w of workshopsToSeed) {
+      const existing = await this.workshopRepository.findOne({
+        where: { name: w.name },
+      });
+      if (!existing) {
+        await this.workshopRepository.save(this.workshopRepository.create(w));
+        this.logger.log(`Workshop created: ${w.name} (Active: ${w.isActive})`);
+      }
     }
 
-    // 3. Seed Default Mechanic
-    const mechanicEmail = 'mechanic.john@fleetcore.com';
-    let mechanic = await this.mechanicRepository.findOne({
-      where: { email: mechanicEmail },
-    });
-    if (!mechanic) {
-      await this.mechanicRepository.save(
-        this.mechanicRepository.create({
-          name: 'John Smith',
-          email: mechanicEmail,
-          specialization: MechanicSpecialization.ENGINE,
-          isActive: true,
-        }),
-      );
-      this.logger.log('Default mechanic created.');
+    // 3. Seed Mechanics (2 Active, 1 Inactive)
+    const mechanicsToSeed = [
+      {
+        name: 'John Smith',
+        email: 'john.smith@fleetcore.com',
+        specialization: MechanicSpecialization.ENGINE,
+        isActive: true,
+      },
+      {
+        name: 'Laura Gomez',
+        email: 'laura.gomez@fleetcore.com',
+        specialization: MechanicSpecialization.TRANSMISSION,
+        isActive: true,
+      },
+      {
+        name: 'Carlos Perez',
+        email: 'carlos.perez@fleetcore.com',
+        specialization: MechanicSpecialization.ELECTRICAL,
+        isActive: false,
+      },
+    ];
+
+    for (const m of mechanicsToSeed) {
+      const existing = await this.mechanicRepository.findOne({
+        where: { email: m.email },
+      });
+      if (!existing) {
+        await this.mechanicRepository.save(this.mechanicRepository.create(m));
+        this.logger.log(`Mechanic created: ${m.name} (Active: ${m.isActive})`);
+      }
     }
 
-    // 4. Seed Default Vehicle
-    const vehiclePlate = 'ABC-123';
-    const existingVehicle = await this.vehicleRepository.findOne({
-      where: { plate: vehiclePlate },
-    });
-    if (!existingVehicle) {
-      await this.vehicleRepository.save(
-        this.vehicleRepository.create({
-          plate: vehiclePlate,
-          brand: 'Freightliner',
-          model: 'M2 106',
-          year: 2023,
-          mileage: 15500,
-          status: VehicleStatus.AVAILABLE,
-        }),
-      );
-      this.logger.log('Default vehicle created.');
+    // 4. Seed Vehicles (2 AVAILABLE, 1 IN_MAINTENANCE, 1 INACTIVE)
+    const vehiclesToSeed = [
+      {
+        plate: 'ABC-123',
+        brand: 'Chevrolet',
+        model: 'NPR',
+        year: 2022,
+        mileage: 45000,
+        status: VehicleStatus.AVAILABLE,
+      },
+      {
+        plate: 'XYZ-789',
+        brand: 'Freightliner',
+        model: 'M2',
+        year: 2023,
+        mileage: 15500,
+        status: VehicleStatus.AVAILABLE,
+      },
+      {
+        plate: 'MNT-001',
+        brand: 'Ford',
+        model: 'Cargo',
+        year: 2021,
+        mileage: 60000,
+        status: VehicleStatus.IN_MAINTENANCE,
+      },
+      {
+        plate: 'INA-999',
+        brand: 'Isuzu',
+        model: 'NMR',
+        year: 2018,
+        mileage: 120000,
+        status: VehicleStatus.INACTIVE,
+      },
+    ];
+
+    for (const v of vehiclesToSeed) {
+      const existing = await this.vehicleRepository.findOne({
+        where: { plate: v.plate },
+      });
+      if (!existing) {
+        await this.vehicleRepository.save(this.vehicleRepository.create(v));
+        this.logger.log(`Vehicle created: ${v.plate} [Status: ${v.status}]`);
+      }
     }
 
     this.logger.log('Database seeding process completed successfully.');

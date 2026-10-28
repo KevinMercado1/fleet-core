@@ -1,6 +1,6 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import * as argon2 from 'argon2';
+import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service.js';
 import { RegisterDto, LoginDto } from './dto/auth.dto.js';
 import { UserRole } from '../users/entities/user.entity.js';
@@ -13,6 +13,8 @@ export class AuthService {
   ) {}
 
   async register(registerDto: RegisterDto) {
+    // Note: Make sure to hash the password in your UsersService or right here before saving it.
+    // Example using bcrypt: const hashedPassword = await bcrypt.hash(registerDto.password, 10);
     return this.usersService.create({
       ...registerDto,
       role: UserRole.TECHNICIAN, // Default role for new users
@@ -25,9 +27,9 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials'); // Check if the user exists in the database
     }
 
-    const isPasswordValid = await argon2.verify(
-      user.password,
+    const isPasswordValid = await bcrypt.compare(
       loginDto.password,
+      user.password,
     );
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials'); // Check if the provided password matches the hashed password in the database
