@@ -99,8 +99,6 @@ export class MaintenancesService {
     const maintenance = this.maintenanceRepository.create({
       ...createDto,
       startDate: start,
-      endDate: end,
-      status: MaintenanceStatus.SCHEDULED,
     });
 
     return this.maintenanceRepository.save(maintenance);

@@ -3,23 +3,19 @@ import { MaintenancesService } from './maintenances.service.js';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import {
   MaintenanceEntity,
-  MaintenanceStatus,
   MaintenanceType,
 } from './entities/maintenance.entity.js';
-import {
-  VehicleEntity,
-  VehicleStatus,
-} from '../vehiculos/entities/vehiculo.entity.js';
+import { VehicleEntity } from '../vehiculos/entities/vehiculo.entity.js';
 import { MechanicEntity } from '../mecanicos/entities/mecanico.entity.js';
 import { WorkshopEntity } from '../workshops/entities/workshop.entity.js';
-import { NotFoundException, ConflictException } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 describe('MaintenancesService', () => {
   let service: MaintenancesService;
-  let maintenanceRepo: any;
+  let _maintenanceRepo: any;
   let vehicleRepo: any;
-  let mechanicRepo: any;
+  let _mechanicRepo: any;
 
   const mockRepository = () => ({
     findOne: vi.fn(),
@@ -56,9 +52,9 @@ describe('MaintenancesService', () => {
     }).compile();
 
     service = module.get<MaintenancesService>(MaintenancesService);
-    maintenanceRepo = module.get(getRepositoryToken(MaintenanceEntity));
+    _maintenanceRepo = module.get(getRepositoryToken(MaintenanceEntity));
     vehicleRepo = module.get(getRepositoryToken(VehicleEntity));
-    mechanicRepo = module.get(getRepositoryToken(MechanicEntity));
+    _mechanicRepo = module.get(getRepositoryToken(MechanicEntity));
   });
 
   it('should be defined', () => {
@@ -73,8 +69,9 @@ describe('MaintenancesService', () => {
       description: 'Preventive check',
       scheduledDate: new Date(),
       type: MaintenanceType.PREVENTIVE,
-      startDate: new Date().toISOString(), // <- Convertido a string
-      endDate: new Date(Date.now() + 60 * 60 * 1000).toISOString(), // <- Convertido a string
+      startDate: new Date().toISOString(),
+      endDate: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+      mileage: 45000,
     };
 
     vehicleRepo.findOne.mockResolvedValue(null);
